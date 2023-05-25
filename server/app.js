@@ -2,9 +2,17 @@ const express = require("express");
 const errorHandlerMiddleware = require("./middleware/error");
 const app = express();
 const cookieParser = require("cookie-parser");
-const userRoutes = require("./routes/user.route");
+const userRoutes = require("./routes/user.route.js");
+const cors = require("cors");
 
 app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true }));
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true, // Allow sending cookies
+  })
+);
 app.use(cookieParser());
 app.use("/", express.static("uploads"));
 
