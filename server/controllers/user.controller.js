@@ -1,4 +1,4 @@
-const User = require("../models/User");
+const User = require("../models/user");
 const ErrorHandler = require("../utils/ErrorHandler");
 const path = require("path");
 const fs = require("fs");
@@ -69,14 +69,19 @@ exports.activate = async (req, res, next) => {
       throw new ErrorHandler("User already exists", 400);
     }
 
-    const user = await User.create({
+    // Create a new user object
+    const user = new User({
       fullname,
       email,
-      avatar,
       password,
+      avatar,
     });
-    sendToken(user, 201, res);
-    res.status(200).json({ user, message: "successful" });
+
+    // Save the user in the database
+    const savedUser = await user.save();
+    console.log(`iscontroller ${savedUser}`);
+
+    sendToken(savedUser, 201, res);
   } catch (err) {
     next(new ErrorHandler(err.message, 500));
   }
@@ -101,8 +106,25 @@ exports.login = async (req, res, next) => {
     if (!isPasswordValid) {
       throw new ErrorHandler(" Please provide the correct information", 400);
     }
-
+    console.log(`islogincontroller ${user}`);
     sendToken(user, 200, res);
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 500));
+  }
+};
+
+exports.getUser = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      throw new ErrorHandler(" User doesn't exist.", 400);
+    }
+
+    res.status(200).json({
+      success: true,
+      user,
+    });
   } catch (error) {
     return next(new ErrorHandler(error.message, 500));
   }
