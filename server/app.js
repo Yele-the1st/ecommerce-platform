@@ -4,6 +4,7 @@ const app = express();
 const cookieParser = require("cookie-parser");
 const userRoutes = require("./routes/user.route.js");
 const cors = require("cors");
+const path = require("path");
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true }));
@@ -14,7 +15,7 @@ app.use(
   })
 );
 app.use(cookieParser());
-app.use("/", express.static("uploads"));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // config
 if (process.env.NODE_ENV !== "PRODUCTION") {
