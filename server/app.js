@@ -3,6 +3,7 @@ const errorHandlerMiddleware = require("./middleware/error");
 const app = express();
 const cookieParser = require("cookie-parser");
 const userRoutes = require("./routes/user.route.js");
+const shopRoutes = require("./routes/shop.route");
 const cors = require("cors");
 const path = require("path");
 
@@ -26,6 +27,7 @@ if (process.env.NODE_ENV !== "PRODUCTION") {
 
 // Mount the routes
 app.use("/api/users", userRoutes);
+app.use("/api/shops", shopRoutes);
 
 // Errorhandling Middleware
 app.use(errorHandlerMiddleware);
