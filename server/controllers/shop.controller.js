@@ -23,7 +23,6 @@ exports.createShop = async (req, res, next) => {
     }
 
     const filename = req.file.filename;
-    console.log(filename);
     const fileUrl = path.join(filename);
 
     const { shopname, address, phoneNumber, zipcode, password } = req.body;
@@ -125,21 +124,45 @@ exports.login = async (req, res, next) => {
 
 exports.getShop = async (req, res, next) => {
   try {
-    const shop = await Shop.findById(req.seller.id);
+    const shopId = req.params.id;
 
+    // Find the shop by its ID and populate products and events
+    const shop = await Shop.findById(shopId)
+      .populate("products")
+      .populate("events");
+
+    // If shop is not found
     if (!shop) {
-      throw new ErrorHandler(" User doesn't exist.", 400);
+      return res.status(404).json({ message: "Shop not found" });
     }
-    res.setHeader(
-      "Cache-Control",
-      "no-store, no-cache, must-revalidate, private"
-    );
-    res.setHeader("Pragma", "no-cache");
-    res.setHeader("Expires", "0");
+
+    // res.setHeader(
+    //   "Cache-Control",
+    //   "no-store, no-cache, must-revalidate, private"
+    // );
+    // res.setHeader("Pragma", "no-cache");
+    // res.setHeader("Expires", "0");
     res.status(200).json({
       success: true,
       seller: shop,
     });
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 500));
+  }
+};
+
+exports.getLogout = async (req, res, next) => {
+  try {
+    res.cookie("seller_token", null, {
+      expires: new Date(Date.now()),
+      httpOnly: true,
+    });
+
+    res.status(201).json({
+      sucess: true,
+      message: "Log out Successful ",
+    });
+    console.log("logged out");
   } catch (error) {
     return next(new ErrorHandler(error.message, 500));
   }

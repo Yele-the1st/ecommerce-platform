@@ -4,11 +4,14 @@ const app = express();
 const cookieParser = require("cookie-parser");
 const userRoutes = require("./routes/user.route.js");
 const shopRoutes = require("./routes/shop.route");
+const productRoutes = require("./routes/product.route");
+const eventRoutes = require("./routes/event.route");
+const couponRoutes = require("./routes/coupon.route");
 const cors = require("cors");
 const path = require("path");
 
 app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: false }));
 app.use(
   cors({
     origin: "http://localhost:3000",
@@ -28,6 +31,9 @@ if (process.env.NODE_ENV !== "PRODUCTION") {
 // Mount the routes
 app.use("/api/users", userRoutes);
 app.use("/api/shops", shopRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/events", eventRoutes);
+app.use("/api/coupons", couponRoutes);
 
 // Errorhandling Middleware
 app.use(errorHandlerMiddleware);
