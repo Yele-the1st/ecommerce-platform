@@ -13,6 +13,7 @@ const {
   getLatestProducts,
   getProducts,
   searchProducts,
+  getCategories,
 } = require("../controllers/product.controller");
 const { upload } = require("../middleware/multer");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
@@ -41,6 +42,8 @@ router.get("/get-latestdrops", catchAsyncErrors(getLatestProducts));
 
 // get all products
 router.get("/get-all-products", catchAsyncErrors(getAllProducts));
+
+router.get("/c/:name", catchAsyncErrors(getCategories));
 
 // Define the route for filtered and paginated products
 router.get("/products", getProducts);

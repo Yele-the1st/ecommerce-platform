@@ -110,6 +110,9 @@ exports.deleteShopProducts = async (req, res, next) => {
 
     // Delete product from database
     await Product.findByIdAndDelete(productId);
+    // Remove product reference from shop
+    const shopId = product.shopId;
+    await Shop.updateOne({ _id: shopId }, { $pull: { products: productId } });
 
     res.status(201).json({
       success: true,
@@ -173,11 +176,11 @@ const parsePriceRange = (priceRange) => {
 exports.getProducts = async (req, res, next) => {
   try {
     // Extract query parameters
-    const page = parseInt(req.query.page) || 10; // Current page number, default: 1
+    const page = parseInt(req.query.page) || 1; // Current page number, default: 1
     const pageSize = parseInt(req.query.pageSize) || 10; // Number of products per page, default: 10
     const category = req.query.category; // Filter by category
     const priceRange = req.query.priceRange; // Filter by price range
-    // Add other filter options as needed
+    const sort = req.query.sort; // Sorting criteria
 
     // Create a query object with the filter conditions
     const query = {};
@@ -191,13 +194,28 @@ exports.getProducts = async (req, res, next) => {
       query.originalPrice = { $gte: min, $lte: max };
     }
 
+    // Apply sorting
+    const sortOptions = {};
+
+    if (sort === "sales") {
+      sortOptions.sold_out = -1; // Sort by sales in descending order
+    } else if (sort === "createdAt") {
+      sortOptions.createdAt = -1; // Sort by createdAt in descending order
+    } else if (sort === "priceAsc") {
+      sortOptions.originalPrice = 1; // Sort by originalPrice in ascending order
+    } else if (sort === "priceDesc") {
+      sortOptions.originalPrice = -1; // Sort by originalPrice in descending order
+    }
+    // Add other sorting options as needed
+
     // Apply pagination
     const totalProducts = await Product.countDocuments(query); // Total number of products matching the filter
     const totalPages = Math.ceil(totalProducts / pageSize); // Total number of pages
     const skip = (page - 1) * pageSize; // Number of products to skip
 
-    // Fetch the products based on the query and pagination
+    // Fetch the products based on the query, sorting, and pagination
     const products = await Product.find(query)
+      .sort(sortOptions)
       .skip(skip)
       .limit(pageSize)
       .populate("shopId");
@@ -229,6 +247,22 @@ exports.searchProducts = async (req, res, next) => {
     res.json({ results: searchResults });
   } catch (error) {
     console.error(error);
+    return next(new ErrorHandler(error, 400));
+  }
+};
+
+// Route to get the data of a specific category based on the name
+exports.getCategories = async (req, res, next) => {
+  const categoryName = req.params.name.toLowerCase();
+
+  try {
+    // Query the database to find products with the matching category name
+    const products = await Product.find({ category: categoryName }).populate(
+      "shopId"
+    );
+
+    res.status(200).json(products);
+  } catch (error) {
     return next(new ErrorHandler(error, 400));
   }
 };

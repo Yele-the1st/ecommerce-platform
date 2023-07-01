@@ -167,3 +167,15 @@ exports.getLogout = async (req, res, next) => {
     return next(new ErrorHandler(error.message, 500));
   }
 };
+
+exports.getAllShops = async (req, res, next) => {
+  try {
+    const shops = await Shop.find();
+    res.status(200).json({
+      success: true,
+      shops,
+    });
+  } catch (error) {
+    return next(new ErrorHandler(error, 400));
+  }
+};
