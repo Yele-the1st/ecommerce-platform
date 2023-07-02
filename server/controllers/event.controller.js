@@ -100,3 +100,15 @@ exports.deleteShopEvents = async (req, res, next) => {
     return next(new ErrorHandler(error, 400));
   }
 };
+
+exports.getAllEvents = async (req, res, next) => {
+  try {
+    const events = await Event.find();
+    res.status(200).json({
+      success: true,
+      events,
+    });
+  } catch (error) {
+    return next(new ErrorHandler(error, 400));
+  }
+};
