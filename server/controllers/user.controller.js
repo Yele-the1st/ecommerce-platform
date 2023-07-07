@@ -146,3 +146,116 @@ exports.getLogout = async (req, res, next) => {
     return next(new ErrorHandler(error.message, 500));
   }
 };
+
+exports.updateUserInfo = async (req, res, next) => {
+  try {
+    const { id, fullname, about, phoneNumber } = req.body;
+    const user = await User.findById({ _id: id });
+
+    if (!user) {
+      throw new ErrorHandler("User not found", 400);
+    }
+
+    if (req.file) {
+      const filePath = `uploads/${user.avatar}`;
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.log(err);
+          return res.status(500).json({ message: "Error deleting file" });
+        }
+      });
+      user.avatar = req.file.filename;
+    }
+
+    user.fullname = fullname;
+    user.about = about;
+    user.phoneNumber = phoneNumber;
+
+    await user.save();
+    res.status(201).json({
+      success: true,
+      user,
+    });
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 500));
+  }
+};
+
+// update user addresses
+
+exports.updateUserAddress = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    const sameTypeAddress = user.addresses.find(
+      (address) => address.addressType === req.body.addressType
+    );
+    if (sameTypeAddress) {
+      return next(
+        new ErrorHandler(`${req.body.addressType} address already exists`)
+      );
+    }
+
+    const existsAddress = user.addresses.find(
+      (address) => address._id === req.body._id
+    );
+
+    if (existsAddress) {
+      Object.assign(existsAddress, req.body);
+    } else {
+      // add the new address to the array
+      user.addresses.push(req.body);
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      user,
+    });
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 500));
+  }
+};
+
+exports.deleteUserAddress = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+    const addressId = req.params.id;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $pull: { addresses: { _id: addressId } } },
+      { new: true }
+    );
+
+    res.status(200).json({ success: true, user: updatedUser });
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 500));
+  }
+};
+
+exports.updateUserPassword = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id).select("+password");
+
+    const isPasswordMatched = await user.comparePassword(req.body.oldPassword);
+
+    if (!isPasswordMatched) {
+      return next(new ErrorHandler("Old password is incorrect!", 400));
+    }
+
+    if (req.body.newPassword !== req.body.confirmPassword) {
+      return next(new ErrorHandler("Password not matched!", 400));
+    }
+
+    user.password = req.body.newPassword;
+
+    await user.save();
+    res
+      .status(200)
+      .json({ success: true, message: "Password updated successfully" });
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 500));
+  }
+};

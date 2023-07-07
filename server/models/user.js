@@ -21,18 +21,21 @@ const userSchema = new mongoose.Schema({
   phoneNumber: {
     type: Number,
   },
+  about: {
+    type: String,
+  },
   addresses: [
     {
       country: {
         type: String,
       },
+      state: {
+        type: String,
+      },
       city: {
         type: String,
       },
-      address1: {
-        type: String,
-      },
-      address2: {
+      streetAddress: {
         type: String,
       },
       zipCode: {
