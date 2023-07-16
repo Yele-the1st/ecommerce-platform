@@ -48,6 +48,22 @@ exports.createEvent = async (req, res, next) => {
   }
 };
 
+// get an Event
+exports.getEvent = async (req, res, next) => {
+  try {
+    const event = await Event.findById({ _id: req.params.id }).populate(
+      "shopId"
+    );
+
+    res.status(200).json({
+      sucess: true,
+      event,
+    });
+  } catch (error) {
+    return next(new ErrorHandler(error, 400));
+  }
+};
+
 // get All Product
 exports.getShopEvents = async (req, res, next) => {
   try {

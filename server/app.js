@@ -7,6 +7,8 @@ const shopRoutes = require("./routes/shop.route");
 const productRoutes = require("./routes/product.route");
 const eventRoutes = require("./routes/event.route");
 const couponRoutes = require("./routes/coupon.route");
+const orderRoutes = require("./routes/order.route");
+const paymentRoutes = require("./routes/payment.route");
 const cors = require("cors");
 const path = require("path");
 
@@ -34,6 +36,8 @@ app.use("/api/shops", shopRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/coupons", couponRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/payments", paymentRoutes);
 
 // Errorhandling Middleware
 app.use(errorHandlerMiddleware);

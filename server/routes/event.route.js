@@ -8,6 +8,7 @@ const {
   deleteShopEvents,
   getShopEvents,
   getAllEvents,
+  getEvent,
 } = require("../controllers/event.controller");
 const { upload } = require("../middleware/multer");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
@@ -24,6 +25,9 @@ router.post(
 
 // get All shop Events
 router.get("/get-all-shop-events/:id", catchAsyncErrors(getShopEvents));
+
+// get single product
+router.get("/get-event/:id", catchAsyncErrors(getEvent));
 
 // get All Events
 router.get("/get-all-events", catchAsyncErrors(getAllEvents));

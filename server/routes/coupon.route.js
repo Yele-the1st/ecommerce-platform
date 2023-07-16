@@ -7,6 +7,7 @@ const {
   createCoupon,
   getShopCoupons,
   deleteShopCoupon,
+  getCoupon,
 } = require("../controllers/coupon.controller");
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const { sellerIsAuthenticated } = require("../middleware/auth");
@@ -28,5 +29,8 @@ router.delete(
   sellerIsAuthenticated,
   catchAsyncErrors(deleteShopCoupon)
 );
+
+// get single coupon
+router.get("/get-coupon-value/:name", catchAsyncErrors(getCoupon));
 
 module.exports = router;

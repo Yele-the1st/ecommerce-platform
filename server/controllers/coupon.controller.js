@@ -60,7 +60,7 @@ exports.getShopCoupons = async (req, res, next) => {
   }
 };
 
-// delete Product of a shop
+// delete coupon of a shop
 
 exports.deleteShopCoupon = async (req, res, next) => {
   try {
@@ -76,6 +76,25 @@ exports.deleteShopCoupon = async (req, res, next) => {
     res.status(201).json({
       success: true,
       message: "Coupon Deleted Successfully!",
+    });
+  } catch (error) {
+    return next(new ErrorHandler(error, 400));
+  }
+};
+
+// get Single Coupon Value
+
+exports.getCoupon = async (req, res, next) => {
+  try {
+    const couponCode = await Coupon.findOne({ name: req.params.name });
+
+    if (!couponCode) {
+      return next(new ErrorHandler("Coupon doesnt exist!", 500));
+    }
+
+    res.status(201).json({
+      success: true,
+      couponCode,
     });
   } catch (error) {
     return next(new ErrorHandler(error, 400));
