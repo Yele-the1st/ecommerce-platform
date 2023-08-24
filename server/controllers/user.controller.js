@@ -4,32 +4,29 @@ const path = require("path");
 const fs = require("fs");
 const { tokenize, deTokenize, sendToken } = require("../utils/jwt");
 const sendMail = require("../utils/sendMail");
+const cloudinary = require("cloudinary");
 
 exports.register = async (req, res, next) => {
   try {
-    const { fullname, email, password } = req.body;
+    const { fullname, email, password, avatar } = req.body;
 
     const userExists = await User.exists({ email });
     if (userExists) {
-      const filename = req.file.filename;
-      const filePath = `uploads/${filename}`;
-      fs.unlink(filePath, (err) => {
-        if (err) {
-          console.log(err);
-          res.status(500).json({ message: "Error deleting file" });
-        }
-      });
       return next(new ErrorHandler("User already exists", 400));
     }
 
-    const filename = req.file.filename;
-    const fileUrl = path.join(filename);
+    const myCloud = await cloudinary.v2.uploader.upload(avatar, {
+      folder: "avatars",
+    });
 
     const user = {
       fullname,
       email,
       password,
-      avatar: fileUrl,
+      avatar: {
+        public_id: myCloud.public_id,
+        url: myCloud.secure_url,
+      },
     };
 
     const activationToken = tokenize(user);
@@ -135,6 +132,8 @@ exports.getLogout = async (req, res, next) => {
     res.cookie("token", null, {
       expires: new Date(Date.now()),
       httpOnly: true,
+      sameSite: "none",
+      secure: true,
     });
 
     res.status(201).json({
@@ -156,15 +155,20 @@ exports.updateUserInfo = async (req, res, next) => {
       throw new ErrorHandler("User not found", 400);
     }
 
-    if (req.file) {
-      const filePath = `uploads/${user.avatar}`;
-      fs.unlink(filePath, (err) => {
-        if (err) {
-          console.log(err);
-          return res.status(500).json({ message: "Error deleting file" });
-        }
+    if (req.body.avatar !== "") {
+      const imageId = user.avatar.public_id;
+
+      await cloudinary.v2.uploader.destroy(imageId);
+
+      const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
+        folder: "avatars",
+        width: 150,
       });
-      user.avatar = req.file.filename;
+
+      user.avatar = {
+        public_id: myCloud.public_id,
+        url: myCloud.secure_url,
+      };
     }
 
     user.fullname = fullname;

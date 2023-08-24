@@ -5,6 +5,7 @@ const path = require("path");
 const fs = require("fs");
 const sendMail = require("../utils/sendMail");
 const { validationResult } = require("express-validator");
+const cloudinary = require("cloudinary");
 
 // create a Product
 exports.createEvent = async (req, res, next) => {
@@ -27,9 +28,29 @@ exports.createEvent = async (req, res, next) => {
       throw new ErrorHandler("Shop Id is invalid!", 400);
     }
 
-    const files = req.files;
-    const imageUrls = files.map(({ filename }) => filename);
-    eventData.images = imageUrls;
+    let images = [];
+
+    if (typeof req.body.images === "string") {
+      images.push(req.body.images);
+    } else {
+      images = req.body.images;
+    }
+
+    const imagesLinks = [];
+
+    for (let i = 0; i < images.length; i++) {
+      const result = await cloudinary.v2.uploader.upload(images[i], {
+        folder: "events",
+      });
+
+      imagesLinks.push({
+        public_id: result.public_id,
+        url: result.secure_url,
+      });
+    }
+
+    const productData = req.body;
+    productData.images = imagesLinks;
 
     const event = await Event.create(eventData);
 
@@ -89,24 +110,18 @@ exports.deleteShopEvents = async (req, res, next) => {
       throw new ErrorHandler("Event not found with this id!", 500);
     }
 
-    if (event.images.length > 0) {
-      // Delete event images
-      await Promise.all(
-        event.images.map(async (imageUrl) => {
-          const filename = imageUrl;
-          const filePath = `uploads/${filename}`;
+    const imagePublicIds = event.images.map((image) => image.public_id);
 
-          try {
-            await fs.promises.unlink(filePath);
-          } catch (err) {
-            console.log(err);
-          }
-        })
-      );
-    }
+    // Delete images from cloud storage
+    await Promise.all(
+      imagePublicIds.map((publicId) => cloudinary.v2.uploader.destroy(publicId))
+    );
 
-    // Delete event from database
-    await Event.findByIdAndDelete(eventId);
+    // Delete product from database and remove product reference from shop
+    await Promise.all([
+      Event.findByIdAndDelete(eventId),
+      Shop.updateOne({ _id: event.shopId }, { $pull: { events: eventId } }),
+    ]);
 
     res.status(201).json({
       success: true,
@@ -124,7 +139,9 @@ exports.getAllEvents = async (req, res, next) => {
       success: true,
       events,
     });
+    console.log(events);
   } catch (error) {
     return next(new ErrorHandler(error, 400));
   }
 };
+ 

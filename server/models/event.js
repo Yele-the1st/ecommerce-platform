@@ -28,7 +28,18 @@ const eventSchema = new Schema(
       type: Number,
       required: [true, "Event Product stock is required."],
     },
-    images: [String],
+    images: [
+      {
+        public_id: {
+          type: String,
+          required: true,
+        },
+        url: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
     shopId: {
       type: Schema.Types.ObjectId,
       ref: "Shop",

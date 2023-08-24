@@ -4,6 +4,7 @@ const path = require("path");
 const fs = require("fs");
 const { tokenize, deTokenize, sendShopToken } = require("../utils/jwt");
 const sendMail = require("../utils/sendMail");
+const cloudinary = require("cloudinary");
 
 exports.createShop = async (req, res, next) => {
   try {
@@ -11,19 +12,12 @@ exports.createShop = async (req, res, next) => {
 
     const shopExists = await Shop.exists({ email });
     if (shopExists) {
-      const filename = req.file.filename;
-      const filePath = `uploads/${filename}`;
-      fs.unlink(filePath, (err) => {
-        if (err) {
-          console.log(err);
-          res.status(500).json({ message: "Error deleting file" });
-        }
-      });
       return next(new ErrorHandler("User already exists", 400));
     }
 
-    const filename = req.file.filename;
-    const fileUrl = path.join(filename);
+    const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
+      folder: "avatars",
+    });
 
     const { shopname, address, phoneNumber, zipcode, password } = req.body;
 
@@ -31,7 +25,10 @@ exports.createShop = async (req, res, next) => {
       shopname,
       email,
       password,
-      avatar: fileUrl,
+      avatar: {
+        public_id: myCloud.public_id,
+        url: myCloud.secure_url,
+      },
       address,
       phoneNumber,
       zipcode,
@@ -135,6 +132,8 @@ exports.getShop = async (req, res, next) => {
     if (!shop) {
       return res.status(404).json({ message: "Shop not found" });
     }
+
+    console.log(`11234566678 ${shop}`);
 
     // res.setHeader(
     //   "Cache-Control",

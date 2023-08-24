@@ -1,8 +1,9 @@
 const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
-const shopSchema = new mongoose.Schema(
+const shopSchema = new Schema(
   {
     shopname: {
       type: String,
@@ -29,6 +30,9 @@ const shopSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    ratings: {
+      type: Number,
+    },
     role: {
       type: String,
       default: "Seller",
@@ -38,19 +42,25 @@ const shopSchema = new mongoose.Schema(
       required: true,
     },
     avatar: {
-      type: String,
-      required: true,
+      public_id: {
+        type: String,
+        required: true,
+      },
+      url: {
+        type: String,
+        required: true,
+      },
     },
     products: [
       {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: "Product",
       },
     ],
     events: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Product",
+        type: Schema.Types.ObjectId,
+        ref: "Event",
       },
     ],
     resetPasswordToken: String,

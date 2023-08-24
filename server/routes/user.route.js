@@ -16,7 +16,7 @@ const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const { isAuthenticated } = require("../middleware/auth");
 
 // Create a user
-router.post("/register-user", upload.single("file"), register);
+router.post("/register-user", register);
 router.post("/activate-user", catchAsyncErrors(activate));
 router.post("/login-user", catchAsyncErrors(login));
 router.get("/get-user", isAuthenticated, catchAsyncErrors(getUser));

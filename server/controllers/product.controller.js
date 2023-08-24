@@ -5,6 +5,7 @@ const path = require("path");
 const fs = require("fs");
 const sendMail = require("../utils/sendMail");
 const { validationResult } = require("express-validator");
+const cloudinary = require("cloudinary");
 
 // create a Product
 exports.createProduct = async (req, res, next) => {
@@ -18,7 +19,6 @@ exports.createProduct = async (req, res, next) => {
         validationErrors: errors.array(),
       });
     }
-
     const productData = req.body;
     const shopId = productData.shopId;
 
@@ -27,9 +27,28 @@ exports.createProduct = async (req, res, next) => {
       throw new ErrorHandler("Shop Id is invalid!", 400);
     }
 
-    const files = req.files;
-    const imageUrls = files.map(({ filename }) => filename);
-    productData.images = imageUrls;
+    let images = [];
+
+    if (typeof req.body.images === "string") {
+      images.push(req.body.images);
+    } else {
+      images = req.body.images;
+    }
+
+    const imagesLinks = [];
+
+    for (let i = 0; i < images.length; i++) {
+      const result = await cloudinary.v2.uploader.upload(images[i], {
+        folder: "products",
+      });
+
+      imagesLinks.push({
+        public_id: result.public_id,
+        url: result.secure_url,
+      });
+    }
+
+    productData.images = imagesLinks;
 
     const product = await Product.create(productData);
 
@@ -92,27 +111,21 @@ exports.deleteShopProducts = async (req, res, next) => {
       throw new ErrorHandler("Product not found with this id!", 500);
     }
 
-    if (product.images.length > 0) {
-      // Delete product images
-      await Promise.all(
-        product.images.map(async (imageUrl) => {
-          const filename = imageUrl;
-          const filePath = `uploads/${filename}`;
+    const imagePublicIds = product.images.map((image) => image.public_id);
 
-          try {
-            await fs.promises.unlink(filePath);
-          } catch (err) {
-            console.log(err);
-          }
-        })
-      );
-    }
+    // Delete images from cloud storage
+    await Promise.all(
+      imagePublicIds.map((publicId) => cloudinary.v2.uploader.destroy(publicId))
+    );
 
-    // Delete product from database
-    await Product.findByIdAndDelete(productId);
-    // Remove product reference from shop
-    const shopId = product.shopId;
-    await Shop.updateOne({ _id: shopId }, { $pull: { products: productId } });
+    // Delete product from database and remove product reference from shop
+    await Promise.all([
+      Product.findByIdAndDelete(productId),
+      Shop.updateOne(
+        { _id: product.shopId },
+        { $pull: { products: productId } }
+      ),
+    ]);
 
     res.status(201).json({
       success: true,
